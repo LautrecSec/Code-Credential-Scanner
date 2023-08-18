@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Shebang line to specify the Python interpreter
 # Copyright (c) 2022 Chris Anley All Rights Reserved
 import os
 import re
@@ -6,9 +7,11 @@ import signal
 import sys
 
 # Code Credential Scanner
-wrote_result = False
+# This script scans for credentials within the codebase by checking various file extensions.
+wrote_result = False  # Flag to indicate if the result has been written
 
 SKIP_EXTS = [
+    # List of file extensions to be skipped during the scanning process
     re.compile(r'\.DS_Store$'),
     re.compile(r'\.css$'),
     re.compile(r'\.deps\.json$'),
@@ -33,6 +36,7 @@ SKIP_EXTS = [
 ]
 
 SKIP_DIRS = [
+    # List of directories to be skipped during the scanning process
     re.compile('/External/'),
     re.compile('/Samples/'),
     re.compile('/NuGet/'),
@@ -49,7 +53,9 @@ SKIP_DIRS = [
     re.compile('example'),
 ]
 
-SHORT_BAD_PASSWORDS = [  # All taken from Daniel Miessler's bad password lists
+SHORT_BAD_PASSWORDS = [
+    # List of short bad passwords, taken from known lists
+    # Short strings are very likely to be non-passwords, but these specific strings are included  # All taken from Daniel Miessler's bad password lists
     # at https://github.com/danielmiessler/SecLists/tree/master/Passwords
     # Short strings are very likely to be non-passwords, but we allow these specific strings
     # since they are known-bad, common passwords
@@ -93,15 +99,17 @@ SHORT_BAD_PASSWORDS = [  # All taken from Daniel Miessler's bad password lists
     'xxxx',
 ]
 
-PWD = r'''[^;<$\n\s'"]'''
-NON_PWD = r'''[;<$\n\s'"]'''
-GUID_LOWER = r'''[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'''
-CLIENT_SECRET = r'''[a-zA-Z0-9_~\-\%/\+\=]{22,300}'''
-EMAIL_ADDR = r'''[.\-_a-zA-Z0-9]{1,80}\@(?:[a-z0-9][a-z0-9-]{1,80}\.){1,}[a-z]{1,10}'''
+PWD = r  # Regex pattern to match passwords'''[^;<$\n\s'"]'''
+NON_PWD = r  # Regex pattern to exclude non-passwords  # Regex pattern to match passwords'''[;<$\n\s'"]'''
+GUID_LOWER = r  # Regex pattern to match GUIDs in lowercase'''[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'''
+CLIENT_SECRET = r  # Regex pattern to match client secrets'''[a-zA-Z0-9_~\-\%/\+\=]{22,300}'''
+EMAIL_ADDR = r  # Regex pattern to match email addresses'''[.\-_a-zA-Z0-9]{1,80}\@(?:[a-z0-9][a-z0-9-]{1,80}\.){1,}[a-z]{1,10}'''
 
 # Regexes we use to extract likely passwords
 
 pwd_rules = [
+    # List of password rules used to extract likely passwords
+    # Each rule is a tuple containing a regex pattern, index, label, and additional info
     # PASSWORD rules are reported first, in case we only report one result for the line
     (re.compile(r'(.*\W)(xox[abpr]-' + PWD + '{20,})(' + NON_PWD + '[^\n]*)'), 2, 'PASSWORD', None),  # Slack access token
     (re.compile(r'(.*)(\$\da?\$\w{1,99}\$' + PWD + r'*)(' + NON_PWD + r'[^\n]*)'), 3, 'PASSWORD', None),  # password hash
